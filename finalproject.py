@@ -1,4 +1,4 @@
-import cvxpy as cp
+import gurobi as gp
 import numpy as np
 
 # Movie data
@@ -23,7 +23,7 @@ person_preferences = {
 }
 
 # Decision variables: X[i] = 1 if movie i+1 is selected, 0 otherwise
-x = cp.Variable(4, boolean=True)  # X1, X2, X3, X4
+x = gp.Variable(4, boolean=True)  # X1, X2, X3, X4
 
 # Pre-compute preference indicators for each person and each movie
 # Lp_i[p][i] = 1 if movie i's length satisfies person p's preference, 0 otherwise
@@ -76,23 +76,23 @@ for p in range(1, 6):  # p = 1 to 5
 H = []
 for p in range(1, 6):  # p = 1 to 5
     # Lp = sum over movies of (x[i] * Lp_indicators[p][i])
-    Lp = cp.sum([x[i] * Lp_indicators[p][i] for i in range(4)])
-    Gp = cp.sum([x[i] * Gp_indicators[p][i] for i in range(4)])
-    Cp = cp.sum([x[i] * Cp_indicators[p][i] for i in range(4)])
-    Rp = cp.sum([x[i] * Rp_indicators[p][i] for i in range(4)])
+    Lp = gp.sum([x[i] * Lp_indicators[p][i] for i in range(4)])
+    Gp = gp.sum([x[i] * Gp_indicators[p][i] for i in range(4)])
+    Cp = gp.sum([x[i] * Cp_indicators[p][i] for i in range(4)])
+    Rp = gp.sum([x[i] * Rp_indicators[p][i] for i in range(4)])
     
     # Hp = 1/4 * (Lp + Gp + Cp + Rp)
     Hp = (Lp + Gp + Cp + Rp) / 4
     H.append(Hp)
 
 # Objective: maximize sum of Hp for all people
-obj_func = cp.sum(H)
+obj_func = gp.sum(H)
 
 # Constraints
 constraints = []
 
 # Constraint: Exactly one movie must be selected
-constraints.append(cp.sum(x) == 1)
+constraints.append(gp.sum(x) == 1)
 
 # Constraints: Each person must have at least 2 preferences met
 # Note: Hp is between 0 and 1, so Hp >= 0.5 means at least 2 out of 4 preferences
@@ -101,10 +101,10 @@ for p in range(5):  # p = 0 to 4 (representing persons 1 to 5)
     constraints.append(H[p] >= 0.5)  # At least 2 out of 4 preferences (0.5 = 2/4)
 
 # Create and solve the problem
-problem = cp.Problem(cp.Maximize(obj_func), constraints)
+problem = gp.Problem(gp.Maximize(obj_func), constraints)
 
 # Solve using GUROBI
-problem.solve(solver=cp.GUROBI, verbose=True)
+problem.solve(solver=gp.GUROBI, verbose=True)
 
 # Print results
 print("obj_func =")
